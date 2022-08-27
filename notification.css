@@ -1,0 +1,138 @@
+﻿*,:before,:after
+{
+    box-sizing:border-box;
+    margin:0;
+    padding:0
+}
+
+.container
+{
+    display:inline;
+    font-family:"din-condensed",sans-serif;
+    margin-left:auto;
+    margin-right:0;
+    opacity:1!important;
+    text-align:right
+}
+
+.banner
+{
+    color:#ffef00;
+    height:80px;
+    margin-right:0;
+    transition:all .3s ease-in-out;
+    width:0
+}
+
+.banner.max
+{
+    margin-right:10px;
+    transition:all .3s ease-in-out;
+    width:750px
+}
+
+.banner.max span
+{
+    display:block
+}
+
+.box
+{
+    background:linear-gradient(to right,#ffef00 4px,transparent 4px) 0 0,linear-gradient(to right,#ffef00 4px,transparent 4px) 0 100%,linear-gradient(to left,#ffef00 4px,transparent 4px) 100% 0,linear-gradient(to left,#ffef00 4px,transparent 4px) 100% 100%,linear-gradient(to bottom,#ffef00 4px,transparent 4px) 0 0,linear-gradient(to bottom,#ffef00 4px,transparent 4px) 100% 0,linear-gradient(to top,#ffef00 4px,transparent 4px) 0 100%,linear-gradient(to top,#ffef00 4px,transparent 4px) 100% 100%;
+    background-repeat:no-repeat;
+    background-size:20px 20px;
+    height:100%;
+    overflow:hidden;
+    text-transform:uppercase;
+    white-space:nowrap;
+    width:100%
+}
+
+.box.align
+{
+    align-items:center;
+    display:flex;
+    justify-content:center
+}
+
+.indicator
+{
+    align-items:center;
+    background-color:#ffef00;
+    display:flex;
+    height:60px;
+    justify-content:center;
+    visibility:hidden;
+    width:60px
+}
+
+@keyframes flickerAnimation {
+    0%
+    {
+        opacity:1
+    }
+
+    50%
+    {
+        opacity:0
+    }
+
+    100%
+    {
+        opacity:1
+    }
+}
+
+@keyframes flickerBgAnimation {
+    0%
+    {
+        background:rgba(255,247,20,0.1)
+    }
+
+    50%
+    {
+        background:rgba(255,247,20,0.3)
+    }
+
+    100%
+    {
+        background:rgba(255,230,80,0.1)
+    }
+}
+
+.flicker
+{
+    -moz-animation:flickerAnimation .5s infinite;
+    -o-animation:flickerAnimation .5s infinite;
+    -webkit-animation:flickerAnimation .5s infinite;
+    animation:flickerAnimation .5s infinite
+}
+
+.flickerbg
+{
+    -moz-animation:flickerBgAnimation 1s infinite;
+    -o-animation:flickerBgAnimation 1s infinite;
+    -webkit-animation:flickerBgAnimation 1s infinite;
+    animation:flickerBgAnimation 1s infinite
+}
+
+.banner .target
+{
+    animation:rightToLeft 8s linear infinite;
+    font-size:40px;
+    font-weight:700;
+    text-transform:uppercase;
+    transform:translate(0px,-3px)
+}
+
+@keyframes rightToLeft {
+    from
+    {
+        transform:translateX(100%)
+    }
+
+    to
+    {
+        transform:translateX(-100%)
+    }
+}
