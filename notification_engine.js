@@ -6,6 +6,19 @@ let notificationApi_Themes = {};
 let notificationApi_currentTheme = null;
 let notificationApi_currentColor = null;
 
+let notificationApi_UserPreferences = {
+    "customPosition": {
+        "enabled": false,
+        "type": "percent",
+        "top": 50,
+        "bottom": 0,
+        "left": 0,
+        "right": 0,
+        "height": 300,
+        "width": 300
+    }
+};
+
 let __notificationApiInternal_headElem = null;
 let __notificationApiInternal_bodyElem = null;
 let __notificationApiInternal_hudAreaElem = null;
@@ -26,6 +39,10 @@ function notificationApi_Init() {
     __notificationApiInternal_notificationDivElem.setAttribute("id", "notificationApi_NotificationDiv")
 
     __notificationApiInternal_hudAreaElem.appendChild(__notificationApiInternal_notificationDivElem);
+    if (notificationApi_UserPreferences["customPosition"]["enabled"]) {
+        __notificationApiInternal_moveElement("custom_user");
+    }
+    
     console.log("[NotificationAPI]: Notification element initialized.")
 }
 
@@ -43,9 +60,14 @@ function notificationApi_Notify(notificationText,
     
     notificationApi_currentTheme = theme;
     notificationApi_currentColor = color;
-    __notificationApiInternal_notificationDivElem.innerHTML = notificationApi_Themes[theme]["content"];
     notificationApi_AnimCount = 0;
     notificationApi_MaxAnimCount = maxAnimCount;
+
+    if (notificationApi_UserPreferences["customPosition"]["enabled"]) {
+        __notificationApiInternal_moveElement("custom_user");
+    }
+
+    __notificationApiInternal_notificationDivElem.innerHTML = notificationApi_Themes[theme]["content"];
     
     notificationApi_Indicator = document.getElementById("indicator");
     notificationApi_Banner = document.getElementById("banner");
@@ -57,7 +79,7 @@ function notificationApi_Notify(notificationText,
 
     textField.setAttribute("style", "animation: rightToLeft " + animSecs + "s linear " + maxAnimCount + ";")
     textField.addEventListener("animationend", notificationApi_EndNotification, false);
-
+    
     textField.textContent = "";
     textField.textContent = notificationText;
 
@@ -88,22 +110,11 @@ function notificationApi_LoadTheme(name, themeContent, styleSheetFile, notifyCal
     __notificationApiInternal_headElem.appendChild(linkElem);
 }
 
-function __notificationApiInternal_initEngineDefs() {
-    engine.on("notificationApi_Init", notificationApi_Init);
-    engine.on("notificationApi_LoadTheme", notificationApi_LoadTheme)
-    engine.on("notificationApi_Notify", notificationApi_Notify);
-    engine.on("notificationApi_EndNotification", notificationApi_EndNotification);
-    engine.on("__notificationApiInternal_setUserDataPath", __notificationApiInternal_setUserDataPath)
-    notificationApi_Init();
-    
-    engine.call("notificationThemeInitCallback");
-}
-
 function __notificationApiInternal_setUserDataPath(userDataPath) {
     __notificationApiInternal_userDataPath = userDataPath;
 }
 
-function __notificationApiInternal_moveElement(whereInHud) {
+function __notificationApiInternal_moveElement(whereInHud, customTop, customBottom, customLeft, customRight, customHeight, customWidth) {
     let divElem = __notificationApiInternal_notificationDivElem.cloneNode();
     let currentParent = __notificationApiInternal_notificationDivElem.parentNode;
     
@@ -145,6 +156,59 @@ function __notificationApiInternal_moveElement(whereInHud) {
             newParent.appendChild(divElem);
             break;
         }
+        case "custom": {
+            currentParent.removeChild(__notificationApiInternal_notificationDivElem);
+
+            let customPositionParent = document.getElementById("notificationApi_NotificationPosition");
+            if (customPositionParent === null) {
+                customPositionParent = document.createElement("div");
+                customPositionParent.id = "notificationApi_NotificationPosition";
+            }
+            
+            customPositionParent.style.display = "block";
+            customPositionParent.style.position = "absolute";
+
+            customPositionParent.style.top = customTop;
+            customPositionParent.style.bottom = customBottom;
+            customPositionParent.style.left = customLeft;
+            customPositionParent.style.right = customRight;
+
+            customPositionParent.style.height = customHeight;
+            customPositionParent.style.width = customWidth;
+
+            let newParent = document.getElementsByTagName("body")[0];
+            newParent.appendChild(divElem);
+            customPositionParent.appendChild(customPositionParent);
+            break;
+        }
+        case "custom_user": {
+            if (!notificationApi_UserPreferences["customPosition"]["enabled"]){
+                return;
+            }
+            currentParent.removeChild(__notificationApiInternal_notificationDivElem);
+            
+            let customPositionParent = document.getElementById("notificationApi_NotificationPosition");
+            if (customPositionParent === null) {
+                customPositionParent = document.createElement("div");
+                customPositionParent.id = "notificationApi_NotificationPosition";
+            }
+
+            customPositionParent.style.display = "block";
+            customPositionParent.style.position = "absolute";
+            
+            customPositionParent.style.top = `${notificationApi_UserPreferences["customPosition"]["top"]}${notificationApi_UserPreferences["customPosition"]["type"] === "percent" ? "%" : "px"}`;
+            customPositionParent.style.bottom = `${notificationApi_UserPreferences["customPosition"]["bottom"]}${notificationApi_UserPreferences["customPosition"]["type"] === "percent" ? "%" : "px"}`;
+            customPositionParent.style.left = `${notificationApi_UserPreferences["customPosition"]["left"]}${notificationApi_UserPreferences["customPosition"]["type"] === "percent" ? "%" : "px"}`;
+            customPositionParent.style.right = `${notificationApi_UserPreferences["customPosition"]["right"]}${notificationApi_UserPreferences["customPosition"]["type"] === "percent" ? "%" : "px"}`;
+            
+            customPositionParent.style.height = `${notificationApi_UserPreferences["customPosition"]["height"]}px`;
+            customPositionParent.style.width = `${notificationApi_UserPreferences["customPosition"]["width"]}px`;
+            
+            let newParent = document.getElementsByTagName("body")[0];
+            customPositionParent.appendChild(divElem);
+            newParent.appendChild(customPositionParent);
+            break;
+        }
     }
     
     if (whereInHud === "native_notification_ui") {
@@ -175,6 +239,27 @@ function __notificationApiInternal_hideNativeNotificationUI(hideText) {
         headline.removeAttribute("style");
         message.removeAttribute("style");
     }
+}
+
+function __notificationApiInternal_CustomPositionPreferencesUpdated(newCustomPositionPref) {
+    console.log(`[NotificationAPI]: Custom position preferences updated:`);
+    notificationApi_UserPreferences["customPosition"] = JSON.parse(newCustomPositionPref);
+    console.log(notificationApi_UserPreferences);
+    if (notificationApi_UserPreferences["customPosition"]["enabled"]) {
+        __notificationApiInternal_moveElement("custom_user");
+    }
+}
+
+function __notificationApiInternal_initEngineDefs() {
+    engine.on("notificationApi_Init", notificationApi_Init);
+    engine.on("notificationApi_LoadTheme", notificationApi_LoadTheme)
+    engine.on("notificationApi_Notify", notificationApi_Notify);
+    engine.on("notificationApi_EndNotification", notificationApi_EndNotification);
+    engine.on("__notificationApiInternal_setUserDataPath", __notificationApiInternal_setUserDataPath)
+    engine.on("__notificationApiInternal_CustomPositionPreferencesUpdated", __notificationApiInternal_CustomPositionPreferencesUpdated)
+    notificationApi_Init();
+
+    engine.call("notificationThemeInitCallback");
 }
 
 document.addEventListener("load", __notificationApiInternal_initEngineDefs);
