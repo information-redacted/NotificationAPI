@@ -105,41 +105,41 @@ function __notificationApiInternal_setUserDataPath(userDataPath) {
 
 function __notificationApiInternal_moveElement(whereInHud) {
     let divElem = __notificationApiInternal_notificationDivElem.cloneNode();
-    let currentParrent = __notificationApiInternal_notificationDivElem.parentNode;
+    let currentParent = __notificationApiInternal_notificationDivElem.parentNode;
     
     switch (whereInHud) {
         // TODO: Force CSS-based hack to toss it to the top/bottom
         
         case "top_right": {
-            currentParrent.removeChild(__notificationApiInternal_notificationDivElem);
+            currentParent.removeChild(__notificationApiInternal_notificationDivElem);
             
             let newParent = document.getElementsByClassName("hud-area-right-bottom")[0]; // TODO: Hack, missing right-top wrapper.
             newParent.appendChild(divElem);
             break;
         }
         case "top_left": {
-            currentParrent.removeChild(__notificationApiInternal_notificationDivElem);
+            currentParent.removeChild(__notificationApiInternal_notificationDivElem);
             
             let newParent = document.getElementsByClassName("hud-wrapper-left-top")[0];
             newParent.appendChild(divElem);
             break;
         }
         case "bottom_right": {
-            currentParrent.removeChild(__notificationApiInternal_notificationDivElem);
+            currentParent.removeChild(__notificationApiInternal_notificationDivElem);
 
             let newParent = document.getElementsByClassName("hud-wrapper-right-bottom")[0];
             newParent.appendChild(divElem);
             break;
         }
         case "bottom_left": {
-            currentParrent.removeChild(__notificationApiInternal_notificationDivElem);
+            currentParent.removeChild(__notificationApiInternal_notificationDivElem);
 
             let newParent = document.getElementsByClassName("hud-wrapper-left-bottom")[0];
             newParent.appendChild(divElem);
             break;
         }
         case "native_notification_ui": {
-            currentParrent.removeChild(__notificationApiInternal_notificationDivElem);
+            currentParent.removeChild(__notificationApiInternal_notificationDivElem);
 
             let newParent = document.getElementsByClassName("hud-message")[0];
             newParent.appendChild(divElem);
