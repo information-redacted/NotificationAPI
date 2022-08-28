@@ -6,18 +6,35 @@ namespace NotificationAPI
 {
     public class Util
     {
-        internal static void WriteFile(string ftype)
+
+        internal static void WriteDefaultThemes(string dataPath)
+        {
+            string[] defaultThemes = new[] { "payday" };
+
+            foreach (string theme in defaultThemes)
+            {
+                if (!Directory.Exists($"{dataPath}\\themes\\{theme}")) Directory.CreateDirectory($"{dataPath}\\themes\\{theme}");
+            
+                if (!File.Exists($"{dataPath}themes\\{theme}\\content.html")) WriteFile("theme_content", theme);
+                if (!File.Exists($"{dataPath}themes\\{theme}\\notification_start.js")) WriteFile("theme_notification_start", theme);
+                if (!File.Exists($"{dataPath}themes\\{theme}\\notification_end.js")) WriteFile("theme_notification_end", theme);
+                if (!File.Exists($"{dataPath}themes\\{theme}\\notification.css")) WriteFile("theme_css", theme);
+                if (!File.Exists($"{dataPath}themes\\{theme}\\notification.svg")) WriteFile("theme_indicator_svg", theme);
+            }
+        }
+        
+        internal static void WriteFile(string ftype, string themeName = "")
         {
             switch (ftype)
             {
-                case "js":
+                case "notification_engine":
                 {
-                    using (Stream stream = NotificationAPI.CurrentAssembly.GetManifestResourceStream($"NotificationAPI.notification.{ftype}"))
+                    using (Stream stream = NotificationAPI.CurrentAssembly.GetManifestResourceStream($"NotificationAPI.notification_engine.js"))
                         if (stream != null)
                             using (StreamReader reader = new StreamReader(stream))
                             {
                                 NotificationAPI.Javascript = reader.ReadToEnd();
-                                var w = File.CreateText($"{NotificationAPI.DataPath}notification.{ftype}");
+                                var w = File.CreateText($"{NotificationAPI.DataPath}notification_engine.js");
                                 w.Write(NotificationAPI.Javascript);
                                 w.Flush();
                                 w.Close();
@@ -25,28 +42,13 @@ namespace NotificationAPI
 
                     break;
                 }
-                case "html":
+                case "theme_content":
                 {
-                    using (Stream stream = NotificationAPI.CurrentAssembly.GetManifestResourceStream($"NotificationAPI.notification.{ftype}"))
+                    using (Stream stream = NotificationAPI.CurrentAssembly.GetManifestResourceStream($"NotificationAPI.themes.{themeName}.content.html"))
                         if (stream != null)
                             using (StreamReader reader = new StreamReader(stream))
                             {
-                                NotificationAPI.ElementHtml = reader.ReadToEnd();
-                                var w = File.CreateText($"{NotificationAPI.DataPath}notification.{ftype}");
-                                w.Write(NotificationAPI.ElementHtml);
-                                w.Flush();
-                                w.Close();
-                            }
-
-                    break;
-                }
-                case "css":
-                {
-                    using (Stream stream = NotificationAPI.CurrentAssembly.GetManifestResourceStream($"NotificationAPI.notification.{ftype}"))
-                        if (stream != null)
-                            using (var reader = new StreamReader(stream))
-                            {
-                                var w = File.CreateText($"{NotificationAPI.DataPath}notification.{ftype}");
+                                var w = File.CreateText($"{NotificationAPI.DataPath}themes\\{themeName}\\content.html");
                                 w.Write(reader.ReadToEnd());
                                 w.Flush();
                                 w.Close();
@@ -54,13 +56,55 @@ namespace NotificationAPI
 
                     break;
                 }
-                case "svg":
+                case "theme_notification_start":
                 {
-                    using (Stream stream = NotificationAPI.CurrentAssembly.GetManifestResourceStream($"NotificationAPI.notification.{ftype}"))
+                    using (Stream stream = NotificationAPI.CurrentAssembly.GetManifestResourceStream($"NotificationAPI.themes.{themeName}.notification_start.js"))
                         if (stream != null)
                             using (StreamReader reader = new StreamReader(stream))
                             {
-                                var w = File.CreateText($"{NotificationAPI.DataPath}notification.{ftype}");
+                                var w = File.CreateText($"{NotificationAPI.DataPath}themes\\{themeName}\\notification_start.js");
+                                w.Write(reader.ReadToEnd());
+                                w.Flush();
+                                w.Close();
+                            }
+
+                    break;
+                }
+                case "theme_notification_end":
+                {
+                    using (Stream stream = NotificationAPI.CurrentAssembly.GetManifestResourceStream($"NotificationAPI.themes.{themeName}.notification_end.js"))
+                        if (stream != null)
+                            using (StreamReader reader = new StreamReader(stream))
+                            {
+                                var w = File.CreateText($"{NotificationAPI.DataPath}themes\\{themeName}\\notification_end.js");
+                                w.Write(reader.ReadToEnd());
+                                w.Flush();
+                                w.Close();
+                            }
+
+                    break;
+                }
+                case "theme_css":
+                {
+                    using (Stream stream = NotificationAPI.CurrentAssembly.GetManifestResourceStream($"NotificationAPI.themes.{themeName}.notification.css"))
+                        if (stream != null)
+                            using (var reader = new StreamReader(stream))
+                            {
+                                var w = File.CreateText($"{NotificationAPI.DataPath}themes\\{themeName}\\notification.css");
+                                w.Write(reader.ReadToEnd());
+                                w.Flush();
+                                w.Close();
+                            }
+
+                    break;
+                }
+                case "theme_indicator_svg":
+                {
+                    using (Stream stream = NotificationAPI.CurrentAssembly.GetManifestResourceStream($"NotificationAPI.themes.{themeName}.notification.svg"))
+                        if (stream != null)
+                            using (StreamReader reader = new StreamReader(stream))
+                            {
+                                var w = File.CreateText($"{NotificationAPI.DataPath}themes\\{themeName}\\notification.svg");
                                 w.Write(reader.ReadToEnd());
                                 w.Flush();
                                 w.Close();

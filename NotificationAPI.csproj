@@ -65,15 +65,15 @@
         <Compile Include="Util.cs" />
     </ItemGroup>
     <ItemGroup>
-      <EmbeddedResource Include="notification.css" />
-      <EmbeddedResource Include="notification.html" />
-      <EmbeddedResource Include="notification.js" />
-    </ItemGroup>
-    <ItemGroup>
-      <EmbeddedResource Include="notification.svg" />
+      <EmbeddedResource Include="notification_engine.js" />
+      <EmbeddedResource Include="themes\payday\notification.css" />
+      <EmbeddedResource Include="themes\payday\notification.svg" />
     </ItemGroup>
     <ItemGroup>
       <Content Include="LICENSE" />
+      <EmbeddedResource Include="themes\payday\content.html" />
+      <EmbeddedResource Include="themes\payday\notification_end.js" />
+      <EmbeddedResource Include="themes\payday\notification_start.js" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
     <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

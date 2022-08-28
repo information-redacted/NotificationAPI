@@ -12,24 +12,27 @@ namespace NotificationAPI
 {
     public class NotificationAPI : MelonMod
     {
-        private static bool _occupied;
-        private static readonly Queue<Notification> Queue = new Queue<Notification>();
         private static MelonPreferences_Category _preferencesCategory;
         private static MelonPreferences_Entry<bool> _patchViewDropsEnabled;
+        public static MelonPreferences_Entry<string> DefaultNotificationTheme;
         private static HarmonyLib.Harmony _harmony;
         private static MelonLogger.Instance _logger;
         private static CohtmlView _hudView;
-
+        private static bool _occupied;
+        
+        private static readonly Queue<Notification> Queue = new Queue<Notification>();
         public static readonly string DataPath = "ChilloutVR_Data\\StreamingAssets\\Cohtml\\UIResources\\NotificationAPI\\";
+        public static string RelativePath;
         internal static Assembly CurrentAssembly;
         internal static string Javascript;
-        internal static string ElementHtml;
 
         public override void OnApplicationStart()
         {
             _harmony = new HarmonyLib.Harmony("NotificationAPI");
             _preferencesCategory = MelonPreferences.CreateCategory("NotificationAPI");
             _patchViewDropsEnabled = _preferencesCategory.CreateEntry("PatchViewDropsEnabled", false, "Patch in-game notification systems");
+            DefaultNotificationTheme = _preferencesCategory.CreateEntry("DefaultNotificationTheme", "payday",
+                "The theme that will be used for notifications that do not specify a custom one.");
             _patchViewDropsEnabled.OnValueChanged += HarmonyPatchOptionUpdated;
             if (_patchViewDropsEnabled.Value)
             {
@@ -38,26 +41,20 @@ namespace NotificationAPI
 
             _logger = LoggerInstance;
             CurrentAssembly = Assembly.GetExecutingAssembly();
+            
             MelonCoroutines.Start(OnUiManagerInit());
 
             if (!Directory.Exists(DataPath)) Directory.CreateDirectory(DataPath);
-            if (!File.Exists($"{DataPath}notification.js")) Util.WriteFile("js");
-            if (!File.Exists($"{DataPath}notification.html")) Util.WriteFile("html");
-            if (!File.Exists($"{DataPath}notification.css")) Util.WriteFile("css");
-            if (!File.Exists($"{DataPath}notification.svg")) Util.WriteFile("svg");
-            
-            if (String.IsNullOrEmpty(Javascript)) Javascript = File.ReadAllText($"{DataPath}notification.js");
-            if (String.IsNullOrEmpty(ElementHtml)) ElementHtml = File.ReadAllText($"{DataPath}notification.html");
+            if (!Directory.Exists($"{DataPath}\\themes")) Directory.CreateDirectory($"{DataPath}\\themes");
+            if (!File.Exists($"{DataPath}\\notification_engine.js")) Util.WriteFile("notification_engine");
+            Util.WriteDefaultThemes(DataPath);
+
+            if (String.IsNullOrEmpty(Javascript)) Javascript = File.ReadAllText($"{DataPath}notification_engine.js");
 
             string cwd = Directory.GetCurrentDirectory();
-            string relPath = Util.RelativePath(
+            RelativePath = Util.RelativePath(
                 $"{cwd}\\ChilloutVR_Data\\StreamingAssets\\Cohtml\\UIResources\\CVR_HUD\\default",
                 $"{cwd}\\{DataPath}").Replace("\\", "/");
-            
-            ElementHtml = ElementHtml.Replace("{{userDataPath}}", relPath);
-            
-            Javascript = Javascript.Replace("{{htmlTemplate}}", ElementHtml);
-            Javascript = Javascript.Replace("{{userDataPath}}", relPath);
         }
 
         private void HarmonyPatchOptionUpdated(bool b1, bool b2)
@@ -78,8 +75,7 @@ namespace NotificationAPI
             {
                 if (!_occupied && Queue.Count > 0)
                 {
-                    var n = Queue.Dequeue();
-                    InternalNotify(n.Msg, n.Iterations, n.Duration);
+                    InternalNotify(Queue.Dequeue());
                 }
                 
                 yield return new WaitForSeconds(0.5f);
@@ -110,7 +106,9 @@ namespace NotificationAPI
             _hudView.Listener.ReadyForBindings += () =>
             {
                 _hudView.View.BindCall("notificationDoneCallback", new Action(CallbackFree));
+                _hudView.View.BindCall("notificationThemeInitCallback", new Action(CallbackThemeInit));
             };
+            
             MelonCoroutines.Start(NotificationRoutine());
         }
 
@@ -129,29 +127,96 @@ namespace NotificationAPI
             Queue.Enqueue(new Notification(msg, animationIterations, animationDuration));
         }
 
-        private static void InternalNotify(string msg, int animationIterations, int animationDuration)
+        public static void Notify(Notification notification)
+        {
+            Queue.Enqueue(notification);
+        }
+
+        private void RegisterThemes()
+        {
+            foreach (var dir in Directory.EnumerateDirectories($"{DataPath}themes\\"))
+            {
+                var _dir = new DirectoryInfo(dir).Name;
+                _logger.Msg($"Loading theme: \"{_dir}\"");
+                RegisterTheme(_dir);
+            }
+        }
+        
+        public static void RegisterTheme(string themeName)
+        {
+            string themePath = $"{DataPath}themes\\{themeName}\\";
+            string themeContent = "";
+            string themeNotifyCallback = "";
+            string themeEndNotificationCallback = "";
+            string stylesheetFile = "";
+
+            if (File.Exists($"{themePath}content.html"))
+            {
+                themeContent = File.ReadAllText($"{themePath}content.html");
+                if (string.IsNullOrEmpty(themeContent))
+                {
+                    _logger.Warning($"Theme \"{themeName}\" did not have content, not loading it.");
+                    return;
+                }
+            }
+
+            if (File.Exists($"{themePath}notification_start.js"))
+                themeNotifyCallback = File.ReadAllText($"{themePath}notification_start.js");
+
+            if (File.Exists($"{themePath}notification_end.js"))
+                themeEndNotificationCallback = File.ReadAllText($"{themePath}notification_end.js");
+
+            stylesheetFile = "notification.css";
+
+            if (string.IsNullOrEmpty(themeEndNotificationCallback))
+                themeEndNotificationCallback = "engine.call(\"notificationDoneCallback\");";
+
+            if (!string.IsNullOrEmpty(themeEndNotificationCallback) &&
+                !themeEndNotificationCallback.Contains("// NotificationAPIAnnotation: DO_NOT_APPEND_ENGINE_CALLBACK"))
+                themeEndNotificationCallback += "\n\nengine.call(\"notificationDoneCallback\");";
+
+
+            _hudView.View.TriggerEvent("notificationApi_LoadTheme", themeName, 
+                themeContent,
+                stylesheetFile,
+                themeNotifyCallback, 
+                themeEndNotificationCallback);
+        }
+
+        private static void InternalNotify(Notification notification)
         {
             _occupied = true;
-            _hudView.View.TriggerEvent("notificationApi_Notify", msg, animationIterations, animationDuration);
+            _hudView.View.TriggerEvent("notificationApi_Notify", notification.Msg, notification.Iterations, notification.Duration);
         }
 
         private void CallbackFree()
         {
             _occupied = false;
         }
+
+        private void CallbackThemeInit()
+        {
+            _hudView.View.TriggerEvent("__notificationApiInternal_setUserDataPath", RelativePath);
+            RegisterThemes();
+        }
     }
 }
 
-struct Notification
+public struct Notification
 {
     public readonly string Msg;
     public readonly int Iterations;
     public readonly int Duration;
+    public readonly string Color;
+    public readonly string Theme;
 
-    public Notification(string msg, int iterations = 3, int duration = 8)
+    public Notification(string msg, int iterations = 3, int duration = 8, string color = "#ffef00", string theme = "")
     {
+        if (theme == "") theme = NotificationAPI.NotificationAPI.DefaultNotificationTheme.Value;
         Msg = msg;
         Iterations = iterations;
         Duration = duration;
+        Color = color;
+        Theme = theme;
     }
 }
