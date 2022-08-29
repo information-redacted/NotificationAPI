@@ -1,5 +1,4 @@
-﻿let notificationApi_AnimCount = 0;
-let notificationApi_MaxAnimCount = 0;
+﻿let notificationApi_MaxAnimCount = 0;
 let notificationApi_Indicator = null;
 let notificationApi_Banner = null;
 let notificationApi_Themes = {};
@@ -24,6 +23,7 @@ let __notificationApiInternal_bodyElem = null;
 let __notificationApiInternal_hudAreaElem = null;
 let __notificationApiInternal_hudMessageElem = null;
 let __notificationApiInternal_notificationDivElem = null;
+let __notificationApiInternal_notificationPositionElement = null;
 let __notificationApiInternal_textElem = null;
 let __notificationApiInternal_userDataPath = null;
 let __notificationApiInternal_hudAreaClass = "hud-area-right-bottom"; // TODO: Create setter from within C#, possibly turn into a user-pref, then theme-property if user-pref is "theme-selected"
@@ -38,7 +38,14 @@ function notificationApi_Init() {
     __notificationApiInternal_notificationDivElem = document.createElement("div");
     __notificationApiInternal_notificationDivElem.setAttribute("id", "notificationApi_NotificationDiv")
 
-    __notificationApiInternal_hudAreaElem.appendChild(__notificationApiInternal_notificationDivElem);
+    __notificationApiInternal_notificationPositionElement = document.getElementById("notificationApi_NotificationPosition");
+    if (__notificationApiInternal_notificationPositionElement === null) {
+        __notificationApiInternal_notificationPositionElement = document.createElement("div");
+        __notificationApiInternal_notificationPositionElement.id = "notificationApi_NotificationPosition";
+    }
+
+    __notificationApiInternal_notificationPositionElement.appendChild(__notificationApiInternal_notificationDivElem);
+    __notificationApiInternal_bodyElem.appendChild(__notificationApiInternal_notificationPositionElement);
     if (notificationApi_UserPreferences["customPosition"]["enabled"]) {
         __notificationApiInternal_moveElement("custom_user");
     }
@@ -60,7 +67,6 @@ function notificationApi_Notify(notificationText,
     
     notificationApi_currentTheme = theme;
     notificationApi_currentColor = color;
-    notificationApi_AnimCount = 0;
     notificationApi_MaxAnimCount = maxAnimCount;
 
     if (notificationApi_UserPreferences["customPosition"]["enabled"]) {
@@ -115,26 +121,27 @@ function __notificationApiInternal_setUserDataPath(userDataPath) {
 }
 
 function __notificationApiInternal_moveElement(whereInHud, customTop, customBottom, customLeft, customRight, customHeight, customWidth) {
-    let divElem = __notificationApiInternal_notificationDivElem.cloneNode();
-    let currentParent = __notificationApiInternal_notificationDivElem.parentNode;
+    let divElem = __notificationApiInternal_notificationDivElem // .cloneNode();
     
     switch (whereInHud) {
-        // TODO: Force CSS-based hack to toss it to the top/bottom
-        
         case "top_right": {
-            currentParent.removeChild(__notificationApiInternal_notificationDivElem);
-            
-            let newParent = document.getElementsByClassName("hud-area-right-bottom")[0]; // TODO: Hack, missing right-top wrapper.
-            newParent.appendChild(divElem);
+            __notificationApiInternal_notificationPositionElement.style.display = "block";
+            __notificationApiInternal_notificationPositionElement.style.position = "absolute";
+
+            __notificationApiInternal_notificationPositionElement.style.top = "0%";
+            __notificationApiInternal_notificationPositionElement.style.bottom = "0%";
+            __notificationApiInternal_notificationPositionElement.style.left = "88%";
+            __notificationApiInternal_notificationPositionElement.style.right = "0%";
             break;
         }
+        
         case "top_left": {
-            currentParent.removeChild(__notificationApiInternal_notificationDivElem);
-            
-            let newParent = document.getElementsByClassName("hud-wrapper-left-top")[0];
-            newParent.appendChild(divElem);
+            __notificationApiInternal_notificationPositionElement.style.top = "0%";
+            __notificationApiInternal_notificationPositionElement.style.bottom = "0%";
+            __notificationApiInternal_notificationPositionElement.style.left = "0%";
+            __notificationApiInternal_notificationPositionElement.style.right = "20%";
             break;
-        }
+        }/**
         case "bottom_right": {
             currentParent.removeChild(__notificationApiInternal_notificationDivElem);
 
@@ -148,7 +155,8 @@ function __notificationApiInternal_moveElement(whereInHud, customTop, customBott
             let newParent = document.getElementsByClassName("hud-wrapper-left-bottom")[0];
             newParent.appendChild(divElem);
             break;
-        }
+        }*/
+        // TODO: Dynamic offsetting from that element i guess?
         case "native_notification_ui": {
             currentParent.removeChild(__notificationApiInternal_notificationDivElem);
 
@@ -157,56 +165,33 @@ function __notificationApiInternal_moveElement(whereInHud, customTop, customBott
             break;
         }
         case "custom": {
-            currentParent.removeChild(__notificationApiInternal_notificationDivElem);
+            __notificationApiInternal_notificationPositionElement.style.display = "block";
+            __notificationApiInternal_notificationPositionElement.style.position = "absolute";
 
-            let customPositionParent = document.getElementById("notificationApi_NotificationPosition");
-            if (customPositionParent === null) {
-                customPositionParent = document.createElement("div");
-                customPositionParent.id = "notificationApi_NotificationPosition";
-            }
-            
-            customPositionParent.style.display = "block";
-            customPositionParent.style.position = "absolute";
+            __notificationApiInternal_notificationPositionElement.style.top = customTop;
+            __notificationApiInternal_notificationPositionElement.style.bottom = customBottom;
+            __notificationApiInternal_notificationPositionElement.style.left = customLeft;
+            __notificationApiInternal_notificationPositionElement.style.right = customRight;
 
-            customPositionParent.style.top = customTop;
-            customPositionParent.style.bottom = customBottom;
-            customPositionParent.style.left = customLeft;
-            customPositionParent.style.right = customRight;
-
-            customPositionParent.style.height = customHeight;
-            customPositionParent.style.width = customWidth;
-
-            let newParent = document.getElementsByTagName("body")[0];
-            newParent.appendChild(divElem);
-            customPositionParent.appendChild(customPositionParent);
+            __notificationApiInternal_notificationPositionElement.style.height = customHeight;
+            __notificationApiInternal_notificationPositionElement.style.width = customWidth;
             break;
         }
         case "custom_user": {
             if (!notificationApi_UserPreferences["customPosition"]["enabled"]){
                 return;
             }
-            currentParent.removeChild(__notificationApiInternal_notificationDivElem);
-            
-            let customPositionParent = document.getElementById("notificationApi_NotificationPosition");
-            if (customPositionParent === null) {
-                customPositionParent = document.createElement("div");
-                customPositionParent.id = "notificationApi_NotificationPosition";
-            }
 
-            customPositionParent.style.display = "block";
-            customPositionParent.style.position = "absolute";
-            
-            customPositionParent.style.top = `${notificationApi_UserPreferences["customPosition"]["top"]}${notificationApi_UserPreferences["customPosition"]["type"] === "percent" ? "%" : "px"}`;
-            customPositionParent.style.bottom = `${notificationApi_UserPreferences["customPosition"]["bottom"]}${notificationApi_UserPreferences["customPosition"]["type"] === "percent" ? "%" : "px"}`;
-            customPositionParent.style.left = `${notificationApi_UserPreferences["customPosition"]["left"]}${notificationApi_UserPreferences["customPosition"]["type"] === "percent" ? "%" : "px"}`;
-            customPositionParent.style.right = `${notificationApi_UserPreferences["customPosition"]["right"]}${notificationApi_UserPreferences["customPosition"]["type"] === "percent" ? "%" : "px"}`;
-            
-            customPositionParent.style.height = `${notificationApi_UserPreferences["customPosition"]["height"]}px`;
-            customPositionParent.style.width = `${notificationApi_UserPreferences["customPosition"]["width"]}px`;
-            
-            let newParent = document.getElementsByTagName("body")[0];
-            customPositionParent.appendChild(divElem);
-            newParent.appendChild(customPositionParent);
+            __notificationApiInternal_notificationPositionElement.style.display = "block";
+            __notificationApiInternal_notificationPositionElement.style.position = "absolute";
+
+            __notificationApiInternal_notificationPositionElement.style.top = `${notificationApi_UserPreferences["customPosition"]["top"]}${notificationApi_UserPreferences["customPosition"]["type"] === "percent" ? "%" : "px"}`;
+            __notificationApiInternal_notificationPositionElement.style.bottom = `${notificationApi_UserPreferences["customPosition"]["bottom"]}${notificationApi_UserPreferences["customPosition"]["type"] === "percent" ? "%" : "px"}`;
+            __notificationApiInternal_notificationPositionElement.style.left = `${notificationApi_UserPreferences["customPosition"]["left"]}${notificationApi_UserPreferences["customPosition"]["type"] === "percent" ? "%" : "px"}`;
+            __notificationApiInternal_notificationPositionElement.style.right = `${notificationApi_UserPreferences["customPosition"]["right"]}${notificationApi_UserPreferences["customPosition"]["type"] === "percent" ? "%" : "px"}`;
+
+            __notificationApiInternal_notificationPositionElement.style.height = `${notificationApi_UserPreferences["customPosition"]["height"]}px`;
+            __notificationApiInternal_notificationPositionElement.style.width = `${notificationApi_UserPreferences["customPosition"]["width"]}px`;
             break;
         }
     }

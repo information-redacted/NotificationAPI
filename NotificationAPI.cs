@@ -23,8 +23,7 @@ namespace NotificationAPI
         public static MelonPreferences_Entry<int> CustomThemePositionRight;
         public static MelonPreferences_Entry<int> CustomThemePositionHeight;
         public static MelonPreferences_Entry<int> CustomThemePositionWidth;
-
-
+        internal static MelonPreferences_Entry<bool> AutomaticEngineUpgradesEnabled;
 
         public static MelonPreferences_Entry<string> DefaultNotificationTheme;
         
@@ -44,6 +43,8 @@ namespace NotificationAPI
             HarmonyInst = new HarmonyLib.Harmony("NotificationAPI");
             _preferencesCategory = MelonPreferences.CreateCategory("NotificationAPI");
             _patchViewDropsEnabled = _preferencesCategory.CreateEntry("PatchViewDropsEnabled", false, "Patch in-game notification systems");
+            AutomaticEngineUpgradesEnabled = _preferencesCategory.CreateEntry("AutomaticEngineUpgradesEnabled", true,
+                "Allow the automatic upgrading of the notification engine JS. Disable if you have a custom fork.");
             DefaultNotificationTheme = _preferencesCategory.CreateEntry("DefaultNotificationTheme", "payday",
                 "The theme that will be used for notifications that do not specify a custom one.");
 
@@ -79,6 +80,7 @@ namespace NotificationAPI
             if (!Directory.Exists(DataPath)) Directory.CreateDirectory(DataPath);
             if (!Directory.Exists($"{DataPath}\\themes")) Directory.CreateDirectory($"{DataPath}\\themes");
             if (!File.Exists($"{DataPath}\\notification_engine.js")) Util.WriteFile("notification_engine");
+            if (AutomaticEngineUpgradesEnabled.Value) Util.WriteFile("notification_engine");
             Util.WriteDefaultThemes(DataPath);
 
             if (String.IsNullOrEmpty(Javascript)) Javascript = File.ReadAllText($"{DataPath}notification_engine.js");
