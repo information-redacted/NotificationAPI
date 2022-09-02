@@ -313,7 +313,7 @@ namespace NotificationAPI
 
             if (!string.IsNullOrEmpty(themeEndNotificationCallback) &&
                 !themeEndNotificationCallback.Contains("// NotificationAPIAnnotation: DO_NOT_APPEND_ENGINE_CALLBACK"))
-                themeEndNotificationCallback += "\n\nengine.call(\"notificationDoneCallback\"); // Appended by the NotificationAPI automatically. Please read the \"Creating a Theme\" documentation if this is undesired.";
+                themeEndNotificationCallback += "\n\nengine.call(\"notificationDoneCallback\"); // Appended by NotificationAPI automatically. Please read the \"Creating a Theme\" documentation if this is undesired.";
 
 
             _hudView.View.TriggerEvent("notificationApi_LoadTheme", themeName, 
