@@ -247,6 +247,7 @@ namespace NotificationAPI
         /// <param name="msg">The message that the notification should display.</param>
         /// <param name="animationIterations">How many times the notification's animation should play.</param>
         /// <param name="animationDuration">How many seconds the animation should take to finish.</param>
+        [Obsolete("Notify(string msg, int animationIterations, int animationDuration) is deprecated, please use Notify(Notification notification) instead.")]
         public static void Notify(string msg, int animationIterations, int animationDuration)
         {
             Queue.Enqueue(new Notification(msg, animationIterations, animationDuration));
