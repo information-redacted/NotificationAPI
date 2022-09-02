@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
 using ABI_RC.Core.UI;
@@ -11,10 +12,17 @@ using UnityEngine;
 
 namespace NotificationAPI
 {
+    // A lot of ReSharper's recommendations are ignored intentionally in order to expose
+    // MelonPreferences, and the Data & Relative paths to calling assemblies.
+    [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
     public class NotificationAPI : MelonMod
     {
+        #region MelonPreference definitions
         private static MelonPreferences_Category _preferencesCategory;
         private static MelonPreferences_Entry<bool> _patchViewDropsEnabled;
+        
+        internal static MelonPreferences_Entry<bool> AutomaticEngineUpgradesEnabled;
+
         public static MelonPreferences_Entry<bool> CustomThemePositionEnabled;
         public static MelonPreferences_Entry<string> CustomThemePositionUnit;
         public static MelonPreferences_Entry<int> CustomThemePositionTop;
@@ -23,23 +31,29 @@ namespace NotificationAPI
         public static MelonPreferences_Entry<int> CustomThemePositionRight;
         public static MelonPreferences_Entry<int> CustomThemePositionHeight;
         public static MelonPreferences_Entry<int> CustomThemePositionWidth;
-        internal static MelonPreferences_Entry<bool> AutomaticEngineUpgradesEnabled;
-
         public static MelonPreferences_Entry<string> DefaultNotificationTheme;
+        #endregion
         
-        internal static HarmonyLib.Harmony HarmonyInst;
+        #region NotificationAPI internal variables
         private static MelonLogger.Instance _logger;
         private static CohtmlView _hudView;
         private static bool _occupied;
-        
         private static readonly Queue<Notification> Queue = new Queue<Notification>();
-        public static readonly string DataPath = "ChilloutVR_Data\\StreamingAssets\\Cohtml\\UIResources\\NotificationAPI\\";
-        public static string RelativePath;
+
+        internal static HarmonyLib.Harmony HarmonyInst;
         internal static Assembly CurrentAssembly;
         internal static string Javascript;
+        #endregion
 
+        #region Publicly-exposed variables for callers
+        public static readonly string DataPath = "ChilloutVR_Data\\StreamingAssets\\Cohtml\\UIResources\\NotificationAPI\\";
+        public static string RelativePath;
+        #endregion
+        
+        #region NotificationAPI internal hooks, coroutines & callbacks
         public override void OnApplicationStart()
         {
+            #region Initial variable definitions
             HarmonyInst = new HarmonyLib.Harmony("NotificationAPI");
             _preferencesCategory = MelonPreferences.CreateCategory("NotificationAPI");
             _patchViewDropsEnabled = _preferencesCategory.CreateEntry("PatchViewDropsEnabled", false, "Patch in-game notification systems");
@@ -57,6 +71,7 @@ namespace NotificationAPI
             CustomThemePositionHeight = _preferencesCategory.CreateEntry("CustomThemePositionHeight", 0, "The height of the notification element in pixels.");
             CustomThemePositionWidth = _preferencesCategory.CreateEntry("CustomThemePositionWidth", 0, "The width of the notification element in pixels.");
 
+            #region Preference event listeners
             _patchViewDropsEnabled.OnValueChanged += PreferenceHooks.HarmonyPatchOptionUpdated;
             CustomThemePositionEnabled.OnValueChanged += PreferenceHooks.CustomPositionSettingUpdatedBool;
             CustomThemePositionUnit.OnValueChanged += PreferenceHooks.CustomPositionSettingUpdatedString;
@@ -66,6 +81,7 @@ namespace NotificationAPI
             CustomThemePositionRight.OnValueChanged += PreferenceHooks.CustomPositionSettingUpdatedInt;
             CustomThemePositionHeight.OnValueChanged += PreferenceHooks.CustomPositionSettingUpdatedInt;
             CustomThemePositionWidth.OnValueChanged += PreferenceHooks.CustomPositionSettingUpdatedInt;
+            #endregion
 
             if (_patchViewDropsEnabled.Value)
             {
@@ -74,24 +90,25 @@ namespace NotificationAPI
 
             _logger = LoggerInstance;
             CurrentAssembly = Assembly.GetExecutingAssembly();
+            #endregion
             
             MelonCoroutines.Start(OnUiManagerInit());
 
+            #region Initial setup & engine/theme upgrades
             if (!Directory.Exists(DataPath)) Directory.CreateDirectory(DataPath);
             if (!Directory.Exists($"{DataPath}\\themes")) Directory.CreateDirectory($"{DataPath}\\themes");
             if (!File.Exists($"{DataPath}\\notification_engine.js")) Util.WriteFile("notification_engine");
-            if (AutomaticEngineUpgradesEnabled.Value) Util.WriteFile("notification_engine");
+            if (AutomaticEngineUpgradesEnabled.Value) Util.WriteFile("notification_engine"); // TODO: Only write if changed
             Util.WriteDefaultThemes(DataPath);
+            #endregion
 
             if (String.IsNullOrEmpty(Javascript)) Javascript = File.ReadAllText($"{DataPath}notification_engine.js");
 
             string cwd = Directory.GetCurrentDirectory();
             RelativePath = Util.RelativePath(
                 $"{cwd}\\ChilloutVR_Data\\StreamingAssets\\Cohtml\\UIResources\\CVR_HUD\\default",
-                $"{cwd}\\{DataPath}").Replace("\\", "/");
+                $"{cwd}\\{DataPath}").Replace("\\", "/"); // Thanks, Windows. (Since we're in a `file://` URI, we need *NIX paths.
         }
-
-
 
         private IEnumerator NotificationRoutine()
         {
@@ -107,6 +124,7 @@ namespace NotificationAPI
             // ReSharper disable once IteratorNeverReturns
         }
         
+        
         private IEnumerator OnUiManagerInit()
         {
             while (CohtmlHud.Instance == null)
@@ -117,7 +135,7 @@ namespace NotificationAPI
         private void OnUiManagerInitCallback()
         {
             _hudView = (CohtmlView)typeof(CohtmlHud).GetField("hudView", BindingFlags.NonPublic | 
-                BindingFlags.Instance)
+                                                                         BindingFlags.Instance)
                 ?.GetValue(CohtmlHud.Instance);
 
             if (_hudView == null)
@@ -135,37 +153,121 @@ namespace NotificationAPI
             
             MelonCoroutines.Start(NotificationRoutine());
         }
+        
+        /// <summary>
+        /// Sends a Notification object to the JavaScript engine.
+        /// </summary>
+        /// <param name="notification">The Notification object to send in.</param>
+        private static void InternalNotify(Notification notification)
+        {
+            _occupied = true;
+            _hudView.View.TriggerEvent("notificationApi_Notify",
+                notification.Msg,
+                notification.Iterations,
+                notification.Duration,
+                notification.Color,
+                notification.Theme);
+        }
 
+        /// <summary>
+        /// Callback from the JavaScript engine to let the notification coroutine know it's allowed to send a new one.
+        /// </summary>
+        private void CallbackFree()
+        {
+            _occupied = false;
+        }
+
+        /// <summary>
+        /// Callback from the JavaScript engine to allow for the registration of user preferences, paths, and themes.
+        /// </summary>
+        private void CallbackThemeInit()
+        {
+            _hudView.View.TriggerEvent("__notificationApiInternal_setUserDataPath", RelativePath);
+            if (CustomThemePositionEnabled.Value) CustomPositionPreferencesUpdated();
+            RegisterThemes();
+        }
+
+        /// <summary>
+        /// Iterates through available themes and registers them.
+        /// </summary>
+        private void RegisterThemes()
+        {
+            foreach (var dir in Directory.EnumerateDirectories($"{DataPath}themes\\"))
+            {
+                var dirName = new DirectoryInfo(dir).Name;
+                _logger.Msg($"Loading theme: \"{dirName}\"");
+                RegisterTheme(dirName);
+            }
+        }
+        
+        /// <summary>
+        /// Callback for when the PreferenceHook for a custom position setting is triggered.
+        /// </summary>
+        internal static void CustomPositionPreferencesUpdated()
+        {
+            var pref = new CustomPositionPreferences(CustomThemePositionEnabled.Value,
+                CustomThemePositionUnit.Value,
+                CustomThemePositionTop.Value,
+                CustomThemePositionBottom.Value,
+                CustomThemePositionLeft.Value,
+                CustomThemePositionRight.Value,
+                CustomThemePositionHeight.Value,
+                CustomThemePositionWidth.Value);
+
+            _hudView.View.TriggerEvent("__notificationApiInternal_CustomPositionPreferencesUpdated", JsonConvert.SerializeObject(pref));
+        }
+        #endregion
+        
+        #region Exposed APIs
+        #region Obsolete APIs
+        /// <summary>
+        /// Creates a default Notification struct with the provided message and queues it.
+        /// </summary>
+        /// <param name="msg">The message that the notification should display.</param>
+        [Obsolete("Notify(string msg) is deprecated, please use Notify(Notification notification) instead.")]
         public static void Notify(string msg)
         {
             Queue.Enqueue(new Notification(msg));
         }
         
+        /// <summary>
+        /// Creates a custom Notification struct with the provided message and queues it.
+        /// </summary>
+        /// <param name="msg">The message that the notification should display.</param>
+        /// <param name="animationIterations">How many times the notification's animation should play.</param>
+        [Obsolete("Notify(string msg, int animationIterations) is deprecated, please use Notify(Notification notification) instead.")]
         public static void Notify(string msg, int animationIterations)
         {
             Queue.Enqueue(new Notification(msg, animationIterations));
         }
         
+        /// <summary>
+        /// Creates a custom Notification struct with the provided message and queues it.
+        /// </summary>
+        /// <param name="msg">The message that the notification should display.</param>
+        /// <param name="animationIterations">How many times the notification's animation should play.</param>
+        /// <param name="animationDuration">How many seconds the animation should take to finish.</param>
         public static void Notify(string msg, int animationIterations, int animationDuration)
         {
             Queue.Enqueue(new Notification(msg, animationIterations, animationDuration));
         }
+        #endregion
 
+        /// <summary>
+        /// Takes a Notification struct and queues it.
+        /// </summary>
+        /// <param name="notification">The Notification struct to queue.</param>
         public static void Notify(Notification notification)
         {
             Queue.Enqueue(notification);
         }
-
-        private void RegisterThemes()
-        {
-            foreach (var dir in Directory.EnumerateDirectories($"{DataPath}themes\\"))
-            {
-                var _dir = new DirectoryInfo(dir).Name;
-                _logger.Msg($"Loading theme: \"{_dir}\"");
-                RegisterTheme(_dir);
-            }
-        }
         
+                /// <summary>
+        /// Registers a theme. At this time, there should be no need to manually register themes,
+        /// as they are all discovered by default in RegisterThemes(), but this may be expanded to allow for custom
+        /// theme paths in the future.
+        /// </summary>
+        /// <param name="themeName">The name of the theme to register.</param>
         public static void RegisterTheme(string themeName)
         {
             string themePath = $"{DataPath}themes\\{themeName}\\";
@@ -207,39 +309,7 @@ namespace NotificationAPI
                 themeNotifyCallback, 
                 themeEndNotificationCallback);
         }
-
-        private static void InternalNotify(Notification notification)
-        {
-            _occupied = true;
-            _hudView.View.TriggerEvent("notificationApi_Notify", notification.Msg, notification.Iterations, notification.Duration);
-        }
-
-        private void CallbackFree()
-        {
-            _occupied = false;
-        }
-
-        private void CallbackThemeInit()
-        {
-            _hudView.View.TriggerEvent("__notificationApiInternal_setUserDataPath", RelativePath);
-            if (CustomThemePositionEnabled.Value) CustomPositionPreferencesUpdated();
-            RegisterThemes();
-        }
-        
-        internal static void CustomPositionPreferencesUpdated()
-        {
-            var pref = new CustomPositionPreferences(CustomThemePositionEnabled.Value,
-                CustomThemePositionUnit.Value,
-                CustomThemePositionTop.Value,
-                CustomThemePositionBottom.Value,
-                CustomThemePositionLeft.Value,
-                CustomThemePositionRight.Value,
-                CustomThemePositionHeight.Value,
-                CustomThemePositionWidth.Value);
-
-            _hudView.View.TriggerEvent("__notificationApiInternal_CustomPositionPreferencesUpdated", JsonConvert.SerializeObject(pref));
-        }
-        
+        #endregion
     }
 }
 
@@ -248,7 +318,7 @@ public struct Notification
     public readonly string Msg;
     public readonly int Iterations;
     public readonly int Duration;
-    public readonly string Color;
+    public readonly string Color; // NOTE: Whether this setting applies is dependent on whether the current theme supports custom colors.
     public readonly string Theme;
 
     public Notification(string msg, int iterations = 3, int duration = 8, string color = "#ffef00", string theme = "")
@@ -285,6 +355,4 @@ internal struct CustomPositionPreferences
         Height = height;
         Width = width;
     }
-    
-    
 }
