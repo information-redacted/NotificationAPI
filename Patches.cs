@@ -24,7 +24,7 @@ namespace NotificationAPI
 
             if (!string.IsNullOrEmpty(small)) msg += small;
             
-            NotificationAPI.Notify(msg, 1);
+            NotificationAPI.Notify(new Notification(msg, 1));
             return false;
         }
         
@@ -50,7 +50,7 @@ namespace NotificationAPI
 
             if (!string.IsNullOrEmpty(small)) msg += small;
             
-            NotificationAPI.Notify(msg, 1);
+            NotificationAPI.Notify(new Notification(msg, 1));
             return false;
         }
     }
