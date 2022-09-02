@@ -31,68 +31,87 @@
         <ErrorReport>prompt</ErrorReport>
         <WarningLevel>4</WarningLevel>
     </PropertyGroup>
+    
+    <PropertyGroup>
+        <!-- Custom-defined properties for ease of use -->
+        <GamePath Condition="'$(GamePath)'==''">D:\SteamLibrary\steamapps\common\ChilloutVR</GamePath>
+    </PropertyGroup>
+    
     <ItemGroup>
+        <!-- Imports -->
         <Reference Include="0Harmony">
-          <HintPath>..\..\SteamLibrary\steamapps\common\ChilloutVR\MelonLoader\0Harmony.dll</HintPath>
+          <HintPath>$(GamePath)\MelonLoader\0Harmony.dll</HintPath>
         </Reference>
         <Reference Include="Assembly-CSharp">
-          <HintPath>..\..\SteamLibrary\steamapps\common\ChilloutVR\ChilloutVR_Data\Managed\Assembly-CSharp.dll</HintPath>
+          <HintPath>$(GamePath)\ChilloutVR_Data\Managed\Assembly-CSharp.dll</HintPath>
         </Reference>
         <Reference Include="cohtml.Net">
-          <HintPath>..\..\SteamLibrary\steamapps\common\ChilloutVR\ChilloutVR_Data\Managed\cohtml.Net.dll</HintPath>
+          <HintPath>$(GamePath)\ChilloutVR_Data\Managed\cohtml.Net.dll</HintPath>
         </Reference>
         <Reference Include="Cohtml.RenderingBackend">
-          <HintPath>..\..\SteamLibrary\steamapps\common\ChilloutVR\ChilloutVR_Data\Managed\Cohtml.RenderingBackend.dll</HintPath>
+          <HintPath>$(GamePath)\ChilloutVR_Data\Managed\Cohtml.RenderingBackend.dll</HintPath>
         </Reference>
         <Reference Include="Cohtml.Runtime">
-          <HintPath>..\..\SteamLibrary\steamapps\common\ChilloutVR\ChilloutVR_Data\Managed\Cohtml.Runtime.dll</HintPath>
+          <HintPath>$(GamePath)\ChilloutVR_Data\Managed\Cohtml.Runtime.dll</HintPath>
         </Reference>
         <Reference Include="MelonLoader">
-          <HintPath>..\..\SteamLibrary\steamapps\common\ChilloutVR\MelonLoader\MelonLoader.dll</HintPath>
+          <HintPath>$(GamePath)\MelonLoader\MelonLoader.dll</HintPath>
         </Reference>
         <Reference Include="Newtonsoft.Json">
-          <HintPath>..\..\SteamLibrary\steamapps\common\ChilloutVR\ChilloutVR_Data\Managed\Newtonsoft.Json.dll</HintPath>
+          <HintPath>$(GamePath)\ChilloutVR_Data\Managed\Newtonsoft.Json.dll</HintPath>
         </Reference>
         <Reference Include="System" />
         <Reference Include="System.Core" />
         <Reference Include="System.Data" />
         <Reference Include="System.Xml" />
         <Reference Include="UnityEngine.CoreModule">
-          <HintPath>..\..\SteamLibrary\steamapps\common\ChilloutVR\ChilloutVR_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+          <HintPath>$(GamePath)\ChilloutVR_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
         </Reference>
     </ItemGroup>
+    
     <ItemGroup>
+        <!-- Compile references -->
         <Compile Include="NotificationAPI.cs" />
         <Compile Include="Patches.cs" />
         <Compile Include="PreferenceHooks.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
         <Compile Include="Util.cs" />
     </ItemGroup>
+    
     <ItemGroup>
-      <EmbeddedResource Include="notification_engine\notification_engine.js" />
-      <EmbeddedResource Include="themes\payday_info\content.html" />
-      <EmbeddedResource Include="themes\payday_info\notification.css" />
-      <EmbeddedResource Include="themes\payday_info\notification.svg" />
-      <EmbeddedResource Include="themes\payday_info\notification_end.js" />
-      <EmbeddedResource Include="themes\payday_info\notification_start.js" />
-      <EmbeddedResource Include="themes\payday\notification.css" />
-      <EmbeddedResource Include="themes\payday\notification.svg" />
+        <!-- Resources -->
+        
+        <!-- Notification Engine (browserify-compiled) -->
+        <EmbeddedResource Include=".build\notification_engine.js" LogicalName="NotificationAPI.notification_engine.js" />
+
+        <!-- Bundled PAYDAY 2 theme (yellow, "POLICE ASSAULT IN PROGRESS") -->
+        <EmbeddedResource Include="themes\payday\content.html" />
+        <EmbeddedResource Include="themes\payday\notification_end.js" />
+        <EmbeddedResource Include="themes\payday\notification_start.js" />
+        <EmbeddedResource Include="themes\payday\notification.css" />
+        <EmbeddedResource Include="themes\payday\notification.svg" />
+
+        <!-- Bundled PAYDAY 2 theme (white, "[!] information") -->
+        <EmbeddedResource Include="themes\payday_info\content.html" />
+        <EmbeddedResource Include="themes\payday_info\notification.css" />
+        <EmbeddedResource Include="themes\payday_info\notification.svg" />
+        <EmbeddedResource Include="themes\payday_info\notification_end.js" />
+        <EmbeddedResource Include="themes\payday_info\notification_start.js" />
     </ItemGroup>
+    
     <ItemGroup>
-      <Content Include="LICENSE" />
-      <EmbeddedResource Include="notification_engine.js" />
-      <Content Include="notification_engine\package.json" />
-      <EmbeddedResource Include="themes\payday\content.html" />
-      <EmbeddedResource Include="themes\payday\notification_end.js" />
-      <EmbeddedResource Include="themes\payday\notification_start.js" />
+        <!-- Project Includes (easy access to editing these files from within the solution) -->
+        <Content Include=".gitignore" />
+        <Content Include="LICENSE" />
+        <Content Include="doc\*" />
+        <Content Include="notification_engine\notification_engine.js" />
+        <Content Include="notification_engine\package.json" />
     </ItemGroup>
+    
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-    <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-         Other similar extension points exist, see Microsoft.Common.targets.
     <Target Name="BeforeBuild">
+        <!-- Execute browserify on the notification engine -->
+        <Exec Command="npx -g browserify notification_engine.js -o ..\.build\notification_engine.js" WorkingDirectory=".\notification_engine" />
     </Target>
-    <Target Name="AfterBuild">
-    </Target>
-    -->
 
 </Project>

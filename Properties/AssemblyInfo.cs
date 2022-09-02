@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using System.Runtime.InteropServices;
 using MelonLoader;
 
 [assembly: AssemblyVersion("1.0.0")]
