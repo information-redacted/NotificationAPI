@@ -43,10 +43,10 @@ window.__notificationApiInternal_hudAreaClass = "hud-area-right-bottom"; // TODO
 
 // notificationApi_Init: Initializes the notification element.
 function notificationApi_Init() {
-
+    // While require() isn't a thing in the browser, we're using Browserify to bundle our code.
     window.__notificationApiInternal_dep_rework = require("rework");
     window.__notificationApiInternal_dep_classPrefix = require("rework-class-prefix");
-    
+
     window.__notificationApiInternal_headElem = document.getElementsByTagName("head")[0];
     window.__notificationApiInternal_bodyElem = document.getElementsByTagName("body")[0];
     window.__notificationApiInternal_hudAreaElem = document.getElementsByClassName(__notificationApiInternal_hudAreaClass)[0];
@@ -66,14 +66,14 @@ function notificationApi_Init() {
     if (window.notificationApi_UserPreferences["customPosition"]["enabled"]) {
         __notificationApiInternal_moveElement("custom_user");
     }
-    
+
     console.log("[NotificationAPI]: Notification element initialized.")
 }
 
-function notificationApi_Notify(notificationText, 
-                                maxAnimCount = 3, 
-                                animSecs = 8, 
-                                color = "#ffef00", 
+function notificationApi_Notify(notificationText,
+                                maxAnimCount = 3,
+                                animSecs = 8,
+                                color = "#ffef00",
                                 theme = "payday") {
     console.log(`[NotificationAPI]: Notify was called;
       Content:\t\t"${notificationText}".
@@ -81,7 +81,7 @@ function notificationApi_Notify(notificationText,
       Duration:\t\t${animSecs}.
       Color:\t\t${color}.
       Theme:\t\t${theme}.`);
-    
+
     window.notificationApi_currentTheme = theme;
     window.notificationApi_currentColor = color;
     window.notificationApi_MaxAnimCount = maxAnimCount;
@@ -91,18 +91,18 @@ function notificationApi_Notify(notificationText,
     }
 
     window.__notificationApiInternal_notificationDivElem.innerHTML = notificationApi_Themes[theme]["content"];
-    
+
     window.notificationApi_Indicator = document.getElementById("indicator");
     window.notificationApi_Banner = document.getElementById("banner");
     
-
     let _textField = document.getElementById("notificationApi_NotificationField");
     let textField = _textField.cloneNode(true);
     _textField.parentNode.replaceChild(textField, _textField);
 
+    // TODO: Move animations to be defined by each theme individually; Allow for a way of triggering EndNotification w/o animations.
     textField.setAttribute("style", "animation: rightToLeft " + animSecs + "s linear " + maxAnimCount + ";")
     textField.addEventListener("animationend", notificationApi_EndNotification, false);
-    
+
     textField.textContent = "";
     textField.textContent = notificationText;
 
@@ -113,16 +113,16 @@ function notificationApi_EndNotification() {
     console.log("[NotificationAPI]: EndNotification was called.")
     let textField = document.getElementById("notificationApi_NotificationField");
     textField.textContent = "";
-    
+
     window.notificationApi_Themes[window.notificationApi_currentTheme]["jsEndNotificationCallback"]();
 }
 
 function notificationApi_LoadTheme(name, themeContent, styleSheet, notifyCallback = "", endNotificationCallback = "") {
     window.notificationApi_Themes[name] = {};
-    
+
     window.notificationApi_Themes[name]["path"] = __notificationApiInternal_userDataPath + `themes/${name}/`;
     window.notificationApi_Themes[name]["content"] = themeContent.replaceAll("{{themePath}}", notificationApi_Themes[name]["path"]).replaceAll("{{themeName}}", name);
-    window.notificationApi_Themes[name]["jsNotifyCallback"] = new Function (notifyCallback.replaceAll("{{themeName}}", name));
+    window.notificationApi_Themes[name]["jsNotifyCallback"] = new Function(notifyCallback.replaceAll("{{themeName}}", name));
     window.notificationApi_Themes[name]["jsEndNotificationCallback"] = new Function(endNotificationCallback.replaceAll("{{themeName}}", name));
 
     window.__notificationApiInternal_headElem.appendChild(document.createComment(`The following element is managed by NotificationAPI for the "${name}" theme.`));
@@ -139,7 +139,7 @@ function __notificationApiInternal_setUserDataPath(userDataPath) {
 
 function __notificationApiInternal_moveElement(whereInHud, customTop, customBottom, customLeft, customRight, customHeight, customWidth) {
     let divElem = window.__notificationApiInternal_notificationDivElem // .cloneNode();
-    
+
     switch (whereInHud) {
         case "top_right": {
             window.__notificationApiInternal_notificationPositionElement.style.display = "block";
@@ -151,34 +151,12 @@ function __notificationApiInternal_moveElement(whereInHud, customTop, customBott
             window.__notificationApiInternal_notificationPositionElement.style.right = "0%";
             break;
         }
-        
+
         case "top_left": {
             window.__notificationApiInternal_notificationPositionElement.style.top = "0%";
             window.__notificationApiInternal_notificationPositionElement.style.bottom = "0%";
             window.__notificationApiInternal_notificationPositionElement.style.left = "0%";
             window.__notificationApiInternal_notificationPositionElement.style.right = "20%";
-            break;
-        }/**
-        case "bottom_right": {
-            currentParent.removeChild(__notificationApiInternal_notificationDivElem);
-
-            let newParent = document.getElementsByClassName("hud-wrapper-right-bottom")[0];
-            newParent.appendChild(divElem);
-            break;
-        }
-        case "bottom_left": {
-            currentParent.removeChild(__notificationApiInternal_notificationDivElem);
-
-            let newParent = document.getElementsByClassName("hud-wrapper-left-bottom")[0];
-            newParent.appendChild(divElem);
-            break;
-        }*/
-        // TODO: Dynamic offsetting from that element i guess?
-        case "native_notification_ui": {
-            currentParent.removeChild(__notificationApiInternal_notificationDivElem);
-
-            let newParent = document.getElementsByClassName("hud-message")[0];
-            newParent.appendChild(divElem);
             break;
         }
         case "custom": {
@@ -195,7 +173,7 @@ function __notificationApiInternal_moveElement(whereInHud, customTop, customBott
             break;
         }
         case "custom_user": {
-            if (!window.notificationApi_UserPreferences["customPosition"]["enabled"]){
+            if (!window.notificationApi_UserPreferences["customPosition"]["enabled"]) {
                 return;
             }
 
@@ -212,17 +190,6 @@ function __notificationApiInternal_moveElement(whereInHud, customTop, customBott
             break;
         }
     }
-    
-    if (whereInHud === "native_notification_ui") {
-        __notificationApiInternal_hideNativeNotificationUI(true);
-        window.__notificationApiInternal_hudMessageElem.style.opacity = 1;
-        divElem.style.position = "relative";
-        divElem.style.top = "50%";
-    } else {
-        __notificationApiInternal_hideNativeNotificationUI(false);
-        window.__notificationApiInternal_hudMessageElem.removeAttribute("style");
-        divElem.removeAttribute("style");
-    }
 
     window.__notificationApiInternal_notificationDivElem = divElem;
 }
@@ -231,7 +198,7 @@ function __notificationApiInternal_hideNativeNotificationUI(hideText) {
     let authoritativeIndication = window.__notificationApiInternal_hudMessageElem.getElementsByClassName("authorative")[0];
     let headline = window.__notificationApiInternal_hudMessageElem.getElementsByClassName("headline")[0];
     let message = window.__notificationApiInternal_hudMessageElem.getElementsByClassName("message")[0];
-    
+
     if (hideText) {
         authoritativeIndication.style.display = "none";
         headline.style.display = "none";
@@ -246,7 +213,7 @@ function __notificationApiInternal_hideNativeNotificationUI(hideText) {
 function __notificationApiInternal_CustomPositionPreferencesUpdated(newCustomPositionPref) {
     console.log(`[NotificationAPI]: Custom position preferences updated:`);
     window.notificationApi_UserPreferences["customPosition"] = JSON.parse(newCustomPositionPref);
-    
+
     if (window.notificationApi_UserPreferences["customPosition"]["enabled"]) {
         __notificationApiInternal_moveElement("custom_user");
     }
@@ -263,5 +230,10 @@ function __notificationApiInternal_initEngineDefs() {
 
     engine.call("notificationThemeInitCallback");
 }
+
+exports.notificationApi_Init = notificationApi_Init;
+exports.notificationApi_LoadTheme = notificationApi_LoadTheme;
+exports.notificationApi_Notify = notificationApi_Notify;
+exports.notificationApi_EndNotification = notificationApi_EndNotification;
 
 document.addEventListener("load", __notificationApiInternal_initEngineDefs);

@@ -74,14 +74,14 @@ namespace NotificationAPI
             DefaultNotificationTheme = _preferencesCategory.CreateEntry("DefaultNotificationTheme", "payday",
                 "The theme that will be used for notifications that do not specify a custom one.");
 
-            CustomThemePositionEnabled = _preferencesCategory.CreateEntry("CustomThemePositionEnabled", false, "Whether the custom placement of the notification element is enabled.");
+            CustomThemePositionEnabled = _preferencesCategory.CreateEntry("CustomThemePositionEnabled", true, "Whether the custom placement of the notification element is enabled.");
             CustomThemePositionUnit = _preferencesCategory.CreateEntry("CustomThemePositionUnit", "percent", "What unit are the Top/Bottom/Left/Right measurements in? (pixels/percent)");
             CustomThemePositionTop = _preferencesCategory.CreateEntry("CustomThemePositionTop", 0, "What is the HUD offset (from the top) that the notification element should appear at?");
             CustomThemePositionBottom = _preferencesCategory.CreateEntry("CustomThemePositionBottom", 0, "What is the HUD offset (from the bottom) that the notification element should appear at?");
-            CustomThemePositionLeft = _preferencesCategory.CreateEntry("CustomThemePositionLeft", 0, "What is the HUD offset (from the left) that the notification element should appear at?");
+            CustomThemePositionLeft = _preferencesCategory.CreateEntry("CustomThemePositionLeft", 85, "What is the HUD offset (from the left) that the notification element should appear at?");
             CustomThemePositionRight = _preferencesCategory.CreateEntry("CustomThemePositionRight", 0, "What is the HUD offset (from the right) that the notification element should appear at?");
-            CustomThemePositionHeight = _preferencesCategory.CreateEntry("CustomThemePositionHeight", 0, "The height of the notification element in pixels.");
-            CustomThemePositionWidth = _preferencesCategory.CreateEntry("CustomThemePositionWidth", 0, "The width of the notification element in pixels.");
+            CustomThemePositionHeight = _preferencesCategory.CreateEntry("CustomThemePositionHeight", 300, "The height of the notification element in pixels.");
+            CustomThemePositionWidth = _preferencesCategory.CreateEntry("CustomThemePositionWidth", 300, "The width of the notification element in pixels.");
 
             #region Preference event listeners
             _patchViewDropsEnabled.OnValueChanged += PreferenceHooks.HarmonyPatchOptionUpdated;
