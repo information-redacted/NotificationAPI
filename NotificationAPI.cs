@@ -190,7 +190,8 @@ namespace NotificationAPI
             if (File.Exists($"{themePath}notification_end.js"))
                 themeEndNotificationCallback = File.ReadAllText($"{themePath}notification_end.js");
 
-            stylesheetFile = "notification.css";
+            if (File.Exists($"{themePath}notification.css"))
+                stylesheetFile = File.ReadAllText($"{themePath}notification.css");
 
             if (string.IsNullOrEmpty(themeEndNotificationCallback))
                 themeEndNotificationCallback = "engine.call(\"notificationDoneCallback\");";

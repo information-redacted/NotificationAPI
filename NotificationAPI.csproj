@@ -69,12 +69,19 @@
         <Compile Include="Util.cs" />
     </ItemGroup>
     <ItemGroup>
-      <EmbeddedResource Include="notification_engine.js" />
+      <EmbeddedResource Include="notification_engine\notification_engine.js" />
+      <EmbeddedResource Include="themes\payday_info\content.html" />
+      <EmbeddedResource Include="themes\payday_info\notification.css" />
+      <EmbeddedResource Include="themes\payday_info\notification.svg" />
+      <EmbeddedResource Include="themes\payday_info\notification_end.js" />
+      <EmbeddedResource Include="themes\payday_info\notification_start.js" />
       <EmbeddedResource Include="themes\payday\notification.css" />
       <EmbeddedResource Include="themes\payday\notification.svg" />
     </ItemGroup>
     <ItemGroup>
       <Content Include="LICENSE" />
+      <EmbeddedResource Include="notification_engine.js" />
+      <Content Include="notification_engine\package.json" />
       <EmbeddedResource Include="themes\payday\content.html" />
       <EmbeddedResource Include="themes\payday\notification_end.js" />
       <EmbeddedResource Include="themes\payday\notification_start.js" />

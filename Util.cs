@@ -9,7 +9,7 @@ namespace NotificationAPI
 
         internal static void WriteDefaultThemes(string dataPath)
         {
-            string[] defaultThemes = new[] { "payday" };
+            string[] defaultThemes = new[] { "payday", "payday_info" };
 
             foreach (string theme in defaultThemes)
             {

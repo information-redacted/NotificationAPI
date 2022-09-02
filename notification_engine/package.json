@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "rework": "^1.0.1",
+    "rework-class-prefix": "^1.0.1"
+  }
+}
