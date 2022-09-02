@@ -275,7 +275,7 @@ namespace NotificationAPI
             Queue.Enqueue(notification);
         }
         
-                /// <summary>
+        /// <summary>
         /// Registers a theme. At this time, there should be no need to manually register themes,
         /// as they are all discovered by default in RegisterThemes(), but this may be expanded to allow for custom
         /// theme paths in the future.
